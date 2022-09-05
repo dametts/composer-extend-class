@@ -123,26 +123,27 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         foreach ($packages as $package) {
             $extra = $package->getExtra();
             if (isset($extra['composer-extend-class']) && is_array($extra['composer-extend-class'])) {
-                foreach ($extra['composer-extend-class'] as $oldClass => $newClass) {
-                    $classExtends[$oldClass] = $newClass;
+                foreach ($extra['composer-extend-class'] as $oldClass => $newClassData) {
+                    $classExtends[$oldClass] = $newClassData;
                 }
             }
         }
 
-        foreach ($classExtends as $oldClass => $newClass) {
+        foreach ($classExtends as $oldClass => $newClassData) {
+            $newClass = $newClassData["new_class"];
             $oldPath   = realpath($loader->findFile($oldClass));
             $newPath   = realpath($loader->findFile($newClass));
             $rawName   = str_replace('.php', '', basename($newPath));
             $newPath   = str_replace(basename($newPath), $rawName."_Old.php", $newPath);
             $namespace = preg_replace('/'.$rawName.'$/', '', $oldClass);
-
-            $this->safeCopy($oldPath, $newPath);
             $autoloadConf = $composer->getPackage()->getAutoload();
             $autoloadConf['exclude-from-classmap'][] = $newPath;
             $autoloadConf['psr-4'][$namespace]       = dirname($newPath);
             $composer->getPackage()->setAutoload($autoloadConf);
-
-            $this->adjustCopiedClass($newPath, $rawName);
+            if($newClassData["create_old"]) {
+                $this->safeCopy($oldPath, $newPath);
+                $this->adjustCopiedClass($newPath, $rawName);
+            }
         }
     }
 
@@ -173,6 +174,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $content = file_get_contents($path);
 
         $regex   = '/(^\s*?class\s*?)('.$oldClassName.')([^\{]*?\{)/m';
+        $subst   = '${1}${2}_Old${3}';
+        $content = preg_replace($regex, $subst, $content, 1);
+        
+        $regex   = '/(^\s*?abstract class\s*?)('.$oldClassName.')([^\{]*?\{)/m';
+        $subst   = '${1}${2}_Old${3}';
+        $content = preg_replace($regex, $subst, $content, 1);
+        
+        $regex   = '/(^\s*?interface\s*?)('.$oldClassName.')([^\{]*?\{)/m';
         $subst   = '${1}${2}_Old${3}';
         $content = preg_replace($regex, $subst, $content, 1);
 
