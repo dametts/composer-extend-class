@@ -1,5 +1,5 @@
 {
-    "name": "bubach/composer-extend-class",
+    "name": "dametts/composer-extend-class",
     "type": "composer-plugin",
     "description": "Composer plugin for extending any package class",
     "keywords": ["Composer", "extending", "class"],
