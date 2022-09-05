@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "composer-plugin-api": "^1.0"
+        "composer-plugin-api": "*"
     },
     "autoload": {
         "psr-4": { "ComposerExtendClass\\": "src/" }
